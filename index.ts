@@ -3,6 +3,8 @@ import express, { Request, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
 import path from "path";
+import axios from "axios";
+import { Agent } from "https";
 denv.config();
 
 const app = express();
@@ -73,12 +75,22 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-      fetch(videoURL)
+      axios(videoURL, {
+        httpsAgent: new Agent({
+          rejectUnauthorized: false,
+        }),
+      })
         .then((result) => {
           logger.printSuccess(`Handled a post!`);
 
           return res.send(
-            buildTags(req.path, post, video, result.url, userDID)
+            buildTags(
+              req.path,
+              post,
+              video,
+              result.request.res.url || "",
+              userDID
+            )
           );
         })
         .catch((error) => {
