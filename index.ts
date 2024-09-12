@@ -124,11 +124,30 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
           logger.printSuccess(`Handling a post video stream...`);
 
           const videoData: Buffer = result.data;
+          const range = req.headers.range;
 
-          res.setHeader("Content-Type", video.mimeType);
-          res.setHeader("Content-Length", video.size);
-          res.writeHead(200);
-          res.end(videoData);
+          if (range) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : video.size - 1;
+            const chunkSize = end - start + 1;
+
+            const videoBuffer = videoData.slice(start, end + 1);
+
+            const headers = {
+              "Content-Range": `bytes ${start}-${end}/${video.size}`,
+              "Accept-Ranges": "bytes",
+              "Content-Length": chunkSize,
+              "Content-Type": video.mimeType,
+            };
+
+            res.writeHead(206, headers);
+            res.end(videoBuffer);
+          } else {
+            res.setHeader("Content-Length", video.size);
+            res.setHeader("Content-Type", video.mimeType);
+            res.status(200).send(videoData);
+          }
         })
         .catch((error) => {
           logger.printError(`Cannot handle stream for ${req.path}:`, error);
