@@ -41,6 +41,7 @@ function buildTags(
   return `
   <html>
     <meta name="og:url" content="${originalURL.href}">
+    <meta property="og:type" content="video.other">
     <meta name="og:site_name" content="Made with love by @sebola.chambando.xyz">
     <meta name="theme-color" content="#0085ff">
     <meta name="og:title" content="${post.value.text}">
