@@ -71,6 +71,7 @@ function buildTags(
       
       <meta property="og:video:url" content="${requestURL}/stream" />
       <meta property="og:video:stream" content="${requestURL}/stream" />
+      <meta property="og:video:stream_secure" content="${requestURL}/stream" />
       <meta property="og:video:secure_url" content="${requestURL}/stream" />
       <meta property="og:video:type" content="${video.mimeType}" />
       
@@ -81,17 +82,6 @@ function buildTags(
         aspectRatio.height * sizeMultiplier
       }" />
       <meta name="theme-color" content="#0085ff">
-      <meta name="twitter:card" content="player">
-      <meta property="twitter:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
-      <meta name="twitter:site" content="@sebola.chambando.xyz">
-      <meta name="twitter:player" content="${requestURL}/stream">
-      <meta name="twitter:player:stream" content="${requestURL}/stream">
-      <meta property="witter:player:width" content="${
-        aspectRatio.width * sizeMultiplier
-      }" />
-      <meta property="witter:player:height" content="${
-        aspectRatio.height * sizeMultiplier
-      }" />
     </head>
     <body>hi</body>
   </html>
@@ -124,6 +114,8 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
       if (!video.ref) return redirectToBsky(req, res);
 
       const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+
+      console.log(req.headers);
 
       axios(videoURL, {
         httpsAgent: new Agent({
