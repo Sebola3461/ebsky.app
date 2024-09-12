@@ -2,6 +2,7 @@ import AtpAgent, { AppBskyFeedPost, BlobRef } from "@atproto/api";
 import express, { Request, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
+import path from "path";
 denv.config();
 
 const app = express();
@@ -16,9 +17,9 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
   try {
     logger.printInfo(`Redirecting ${req.path} to bsky...`);
 
-    const url = new URL(req.url);
+    const url = new URL(path.join("https://bsky.app", req.path));
 
-    url.host = "https://bsky.app";
+    url.host = "bsky.app";
 
     res.status(force ? 302 : 301).redirect(url.href);
   } catch (e) {
@@ -34,7 +35,7 @@ function buildTags(
 ) {
   const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-  const originalURL = new URL(url);
+  const originalURL = new URL(path.join("https://bsky.app", url));
   originalURL.host = "bsky.app";
 
   return `
@@ -70,7 +71,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(req.originalUrl, post, video, userDID));
+      return res.send(buildTags(req.path, post, video, userDID));
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
