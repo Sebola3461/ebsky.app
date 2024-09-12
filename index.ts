@@ -27,14 +27,20 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
 }
 
 function buildTags(
+  url: string,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
   userDID: string
 ) {
   const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
+  const originalURL = new URL(url);
+  originalURL.host = "bsky.app";
+
   return `
   <html>
+    <meta name="og:url" content="${originalURL.href}">
+    <meta name="og:site_name" content="Made with love by @sebola.chambando.xyz">
     <meta name="theme-color" content="#0085ff">
     <meta name="og:title" content="${post.value.text}">
     <meta property="og:video" content="${videoURL}" />
@@ -64,7 +70,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(post, video, userDID));
+      return res.send(buildTags(req.url, post, video, userDID));
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
