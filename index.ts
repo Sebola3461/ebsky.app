@@ -114,29 +114,21 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-      axios(videoURL, {
-        httpsAgent: new Agent({
-          rejectUnauthorized: false,
-        }),
-      })
-        .then((result) => {
-          logger.printSuccess(`Handled a post!`);
+      // axios(videoURL, {
+      //   httpsAgent: new Agent({
+      //     rejectUnauthorized: false,
+      //   }),
+      // })
+      //   .then((result) => {
+      logger.printSuccess(`Handled a post!`);
 
-          return res.send(
-            buildTags(
-              req.path,
-              post,
-              video,
-              result.request.res.url || "",
-              userDID
-            )
-          );
-        })
-        .catch((error) => {
-          logger.printError(`Cannot handle ${req.path}:`, error);
+      return res.send(buildTags(req.path, post, video, videoURL, userDID));
+      // })
+      // .catch((error) => {
+      //   logger.printError(`Cannot handle ${req.path}:`, error);
 
-          res.status(500).send(Buffer.from(""));
-        });
+      //   res.status(500).send(Buffer.from(""));
+      // });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
