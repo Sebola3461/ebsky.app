@@ -70,7 +70,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(req.url, post, video, userDID));
+      return res.send(buildTags(req.originalUrl, post, video, userDID));
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
