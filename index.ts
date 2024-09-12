@@ -63,6 +63,16 @@ function buildTags(
         (post.value.embed?.aspectRatio as any)?.height || 720
       }" />
       <meta name="theme-color" content="#0085ff">
+      <meta name="twitter:card" content="player">
+      <meta name="twitter:site" content="@sebola.chambando.xyz">
+      <meta name="twitter:player" content="${videoURL}">
+      <meta name="twitter:player:stream" content="${videoURL}">
+      <meta property="witter:player:width" content="${
+        (post.value.embed?.aspectRatio as any)?.width || 1280
+      }" />
+      <meta property="witter:player:height" content="${
+        (post.value.embed?.aspectRatio as any)?.height || 720
+      }" />
     </head>
     <body>hi</body>
   </html>
