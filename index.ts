@@ -5,6 +5,7 @@ import denv from "dotenv";
 import path from "path";
 import axios from "axios";
 import { Agent } from "https";
+import { Readable } from "stream";
 denv.config();
 
 const app = express();
@@ -30,7 +31,7 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
 }
 
 function buildTags(
-  url: string,
+  req: Request,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
   videoURL: string,
@@ -42,6 +43,8 @@ function buildTags(
   // originalURL.host = "bsky.app";
 
   if (!post.value.embed) return "";
+
+  const requestURL = `${req.protocol}://${req.hostname}${req.originalUrl}`;
 
   const aspectRatio: { width: number; height: number } = post.value.embed
     .aspectRatio as any;
@@ -66,9 +69,9 @@ function buildTags(
       
       <meta property="og:url" content="${videoURL}" />
       
-      <meta property="og:video:url" content="${videoURL}" />
-      <meta property="og:video:stream" content="${videoURL}" />
-      <meta property="og:video:secure_url" content="${videoURL}" />
+      <meta property="og:video:url" content="${requestURL}/stream" />
+      <meta property="og:video:stream" content="${requestURL}/stream" />
+      <meta property="og:video:secure_url" content="${requestURL}/stream" />
       <meta property="og:video:type" content="${video.mimeType}" />
       
       <meta property="og:video:width" content="${
@@ -81,8 +84,8 @@ function buildTags(
       <meta name="twitter:card" content="player">
       <meta property="twitter:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       <meta name="twitter:site" content="@sebola.chambando.xyz">
-      <meta name="twitter:player" content="${videoURL}">
-      <meta name="twitter:player:stream" content="${videoURL}">
+      <meta name="twitter:player" content="${requestURL}/stream">
+      <meta name="twitter:player:stream" content="${requestURL}/stream">
       <meta property="witter:player:width" content="${
         aspectRatio.width * sizeMultiplier
       }" />
@@ -94,6 +97,81 @@ function buildTags(
   </html>
   `;
 }
+
+function bufferToStream(buffer: Buffer) {
+  const readable = new Readable();
+  readable._read = () => {};
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+}
+
+app.get("/profile/:repository/post/:post/stream", (req, res) => {
+  bsky
+    .getPost({ repo: req.params.repository, rkey: req.params.post })
+    .then((post) => {
+      if (!post.value.embed) return redirectToBsky(req, res);
+
+      const userDID = post.uri.split("/")[2]; // No need to do another api call :fire:
+
+      const media = post.value.embed;
+
+      if (media.$type != "app.bsky.embed.video")
+        return redirectToBsky(req, res);
+
+      const video = media.video as any as BlobRef;
+
+      if (!video.ref) return redirectToBsky(req, res);
+
+      const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+
+      axios(videoURL, {
+        httpsAgent: new Agent({
+          rejectUnauthorized: false,
+        }),
+      })
+        .then((result) => {
+          logger.printSuccess(`Handling a post video stream...`);
+
+          const videoData: Buffer = result.data;
+          const range = req.headers.range;
+
+          if (range) {
+            // Handle partial requests for video (streaming)
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : video.size - 1;
+            const chunkSize = end - start + 1;
+
+            const videoBuffer = videoData.slice(start, end + 1);
+
+            const headers = {
+              "Content-Range": `bytes ${start}-${end}/${video.size}`,
+              "Accept-Ranges": "bytes",
+              "Content-Length": chunkSize,
+              "Content-Type": video.mimeType,
+            };
+
+            res.writeHead(206, headers);
+            res.end(videoBuffer);
+          } else {
+            res.setHeader("Content-Length", video.size);
+            res.setHeader("Content-Type", video.mimeType);
+            res.status(200).send(videoData);
+          }
+        })
+        .catch((error) => {
+          logger.printError(`Cannot handle stream for ${req.path}:`, error);
+
+          res.status(500).send(Buffer.from(""));
+        });
+    })
+    .catch((error) => {
+      logger.printError(`Cannot handle stream for ${req.path}:`, error);
+
+      res.status(500).send(Buffer.from(""));
+    });
+});
 
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
@@ -122,7 +200,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
       //   .then((result) => {
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(req.path, post, video, videoURL, userDID));
+      return res.send(buildTags(req, post, video, videoURL, userDID));
       // })
       // .catch((error) => {
       //   logger.printError(`Cannot handle ${req.path}:`, error);
