@@ -31,16 +31,17 @@ function buildTags(
   url: string,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
+  videoURL: string,
   userDID: string
 ) {
-  const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+  // const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-  const originalURL = new URL(path.join("https://bsky.app", url));
-  originalURL.host = "bsky.app";
+  // const originalURL = new URL(path.join("https://bsky.app", url));
+  // originalURL.host = "bsky.app";
 
   return `
   <html>
-    <meta name="og:url" content="${originalURL.href}">
+    <meta name="og:url" content="${videoURL}">
     <meta property="og:type" content="video.other">
     <meta name="og:site_name" content="Made with love by @sebola.chambando.xyz">
     <meta name="theme-color" content="#0085ff">
@@ -70,9 +71,19 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       if (!video.ref) return redirectToBsky(req, res);
 
-      logger.printSuccess(`Handled a post!`);
+      const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-      return res.send(buildTags(req.path, post, video, userDID));
+      fetch(videoURL)
+        .then((result) => {
+          logger.printSuccess(`Handled a post!`);
+
+          return res.send(
+            buildTags(req.path, post, video, result.url, userDID)
+          );
+        })
+        .catch((error) => {
+          logger.printError(`Cannot handle ${req.path}:`, error);
+        });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
