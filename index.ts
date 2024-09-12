@@ -6,6 +6,7 @@ import path from "path";
 import axios from "axios";
 import { Agent } from "https";
 import { Readable } from "stream";
+import { readFileSync, writeFileSync } from "fs";
 denv.config();
 
 const app = express();
@@ -96,7 +97,7 @@ function bufferToStream(buffer: Buffer) {
   return readable;
 }
 
-app.get("/profile/:repository/post/:post/stream", (req, res) => {
+app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
     .then((post) => {
@@ -121,81 +122,17 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
         }),
       })
         .then((result) => {
-          logger.printSuccess(`Handling a post video stream...`);
+          logger.printSuccess(`Handled a post!`);
 
-          const videoData: Buffer = result.data;
-          const range = req.headers.range;
-
-          if (range) {
-            const parts = range.replace(/bytes=/, "").split("-");
-            const start = parseInt(parts[0], 10);
-            const end = parts[1] ? parseInt(parts[1], 10) : video.size - 1;
-            const chunkSize = end - start + 1;
-
-            const videoBuffer = videoData.slice(start, end + 1);
-
-            const headers = {
-              "Content-Range": `bytes ${start}-${end}/${video.size}`,
-              "Accept-Ranges": "bytes",
-              "Content-Length": chunkSize,
-              "Content-Type": video.mimeType,
-            };
-
-            res.writeHead(206, headers);
-            res.end(videoBuffer);
-          } else {
-            res.setHeader("Content-Length", video.size);
-            res.setHeader("Content-Type", video.mimeType);
-            res.status(200).send(videoData);
-          }
+          res.setHeader("Content-Type", video.mimeType);
+          res.setHeader("Content-Length", video.size);
+          return res.send(result.data);
         })
         .catch((error) => {
-          logger.printError(`Cannot handle stream for ${req.path}:`, error);
+          logger.printError(`Cannot handle ${req.path}:`, error);
 
           res.status(500).send(Buffer.from(""));
         });
-    })
-    .catch((error) => {
-      logger.printError(`Cannot handle stream for ${req.path}:`, error);
-
-      res.status(500).send(Buffer.from(""));
-    });
-});
-
-app.get("/profile/:repository/post/:post", (req, res) => {
-  bsky
-    .getPost({ repo: req.params.repository, rkey: req.params.post })
-    .then((post) => {
-      if (!post.value.embed) return redirectToBsky(req, res);
-
-      const userDID = post.uri.split("/")[2]; // No need to do another api call :fire:
-
-      const media = post.value.embed;
-
-      if (media.$type != "app.bsky.embed.video")
-        return redirectToBsky(req, res);
-
-      const video = media.video as any as BlobRef;
-
-      if (!video.ref) return redirectToBsky(req, res);
-
-      const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
-
-      // axios(videoURL, {
-      //   httpsAgent: new Agent({
-      //     rejectUnauthorized: false,
-      //   }),
-      // })
-      //   .then((result) => {
-      logger.printSuccess(`Handled a post!`);
-
-      return res.send(buildTags(req, post, video, videoURL, userDID));
-      // })
-      // .catch((error) => {
-      //   logger.printError(`Cannot handle ${req.path}:`, error);
-
-      //   res.status(500).send(Buffer.from(""));
-      // });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
