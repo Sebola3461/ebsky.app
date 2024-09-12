@@ -122,11 +122,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
         }),
       })
         .then((result) => {
-          logger.printSuccess(`Handled a post!`);
-
-          res.setHeader("Content-Type", video.mimeType);
-          res.setHeader("Content-Length", video.size);
-          return res.send(result.data);
+          return res.redirect(videoURL);
         })
         .catch((error) => {
           logger.printError(`Cannot handle ${req.path}:`, error);
