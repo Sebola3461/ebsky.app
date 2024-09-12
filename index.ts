@@ -49,6 +49,7 @@ function buildTags(
     <meta name="theme-color" content="#0085ff">
     <meta name="og:title" content="${post.value.text}">
     <meta property="og:video" content="${videoURL}" />
+    <meta property="og:image" content="${videoURL}" />
     <meta property="og:video:secure_url" content="${videoURL}" />
     <meta property="og:video:type" content="${video.mimeType}" />
     <body>hi</body>
