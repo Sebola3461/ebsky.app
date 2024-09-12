@@ -1,13 +1,21 @@
 import AtpAgent, { BlobRef } from "@atproto/api";
 import express, { Request, Response } from "express";
+import { LoggerUtils } from "./utils/LoggerUtils";
+import denv from "dotenv";
+denv.config();
+
 const app = express();
 
 const bsky = new AtpAgent({
   service: "https://bsky.social",
 });
 
+const logger = new LoggerUtils("Server");
+
 function redirectToBsky(req: Request, res: Response, force?: boolean) {
   try {
+    logger.printInfo(`Redirecting ${req.path} to bsky...`);
+
     const url = new URL(req.url);
 
     url.host = "https://bsky.app";
@@ -46,23 +54,15 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       if (!video.ref) return redirectToBsky(req, res);
 
+      logger.printSuccess(`Handled a post!`);
+
       return res.send(buildTags(video, userDID));
+    })
+    .catch((error) => {
+      logger.printError(`Cannot handle ${req.path}:`, error);
     });
 });
 
-app.listen(3000, () => console.log("online"));
+const port = process.env.PORT || 3000;
 
-// bsky
-//   .login({
-//     identifier: config.username,
-//     password: config.password,
-//   })
-//   .then((login) => {
-//     bsky
-//       .getPost({ repo: "sebola.chambando.xyz", rkey: "3l3w3cjrx3m2q" })
-//       .then((post) => {
-//         if (!post.value.embed) return;
-
-//         return
-//       });
-//   });
+app.listen(port, () => logger.printSuccess(`Running on port ${port}!`));
