@@ -1,4 +1,4 @@
-import AtpAgent, { BlobRef } from "@atproto/api";
+import AtpAgent, { AppBskyFeedPost, BlobRef } from "@atproto/api";
 import express, { Request, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
@@ -26,14 +26,22 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
   }
 }
 
-function buildTags(video: BlobRef, userDID: string) {
+function buildTags(
+  post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
+  video: BlobRef,
+  userDID: string
+) {
   const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
   return `
-  <meta name="theme-color" content="#0085ff">
-  <meta property="og:video" content="${videoURL}" />
-  <meta property="og:video:secure_url" content="${videoURL}" />
-  <meta property="og:video:type" content="${video.mimeType}" />
+  <html>
+    <meta name="theme-color" content="#0085ff">
+    <meta name="og:title" content="${post.value.text}">
+    <meta property="og:video" content="${videoURL}" />
+    <meta property="og:video:secure_url" content="${videoURL}" />
+    <meta property="og:video:type" content="${video.mimeType}" />
+    <body>hi</body>
+  </html>
   `;
 }
 
@@ -56,7 +64,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(video, userDID));
+      return res.send(buildTags(post, video, userDID));
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
