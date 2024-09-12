@@ -152,8 +152,10 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
               "Content-Type": video.mimeType,
             };
 
+            const videoStream = bufferToStream(videoBuffer);
+
             res.writeHead(206, headers);
-            res.end(videoBuffer);
+            videoStream.pipe(res);
           } else {
             res.setHeader("Content-Length", video.size);
             res.setHeader("Content-Type", video.mimeType);
