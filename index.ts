@@ -41,6 +41,20 @@ function buildTags(
   // const originalURL = new URL(path.join("https://bsky.app", url));
   // originalURL.host = "bsky.app";
 
+  if (!post.value.embed) return "";
+
+  const aspectRatio: { width: number; height: number } = post.value.embed
+    .aspectRatio as any;
+
+  let sizeMultiplier = 1;
+
+  if (aspectRatio.width > 1920 || aspectRatio.height > 1920) {
+    sizeMultiplier = 0.5;
+  }
+  if (aspectRatio.width < 400 && aspectRatio.height < 400) {
+    sizeMultiplier = 2;
+  }
+
   return `
   <html>
     <head>
@@ -57,10 +71,10 @@ function buildTags(
       <meta property="og:video:type" content="${video.mimeType}" />
       
       <meta property="og:video:width" content="${
-        (post.value.embed?.aspectRatio as any)?.width || 1280
+        aspectRatio.width * sizeMultiplier
       }" />
       <meta property="og:video:height" content="${
-        (post.value.embed?.aspectRatio as any)?.height || 720
+        aspectRatio.height * sizeMultiplier
       }" />
       <meta name="theme-color" content="#0085ff">
       <meta name="twitter:card" content="player">
@@ -118,10 +132,14 @@ app.get("/profile/:repository/post/:post", (req, res) => {
         })
         .catch((error) => {
           logger.printError(`Cannot handle ${req.path}:`, error);
+
+          res.status(500).send(Buffer.from(""));
         });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
+
+      res.status(500).send(Buffer.from(""));
     });
 });
 
