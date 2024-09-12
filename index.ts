@@ -67,6 +67,7 @@ function buildTags(
       <meta property="og:url" content="${videoURL}" />
       
       <meta property="og:video:url" content="${videoURL}" />
+      <meta property="og:video:stream" content="${videoURL}" />
       <meta property="og:video:secure_url" content="${videoURL}" />
       <meta property="og:video:type" content="${video.mimeType}" />
       
@@ -78,14 +79,15 @@ function buildTags(
       }" />
       <meta name="theme-color" content="#0085ff">
       <meta name="twitter:card" content="player">
+      <meta property="twitter:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       <meta name="twitter:site" content="@sebola.chambando.xyz">
       <meta name="twitter:player" content="${videoURL}">
       <meta name="twitter:player:stream" content="${videoURL}">
       <meta property="witter:player:width" content="${
-        (post.value.embed?.aspectRatio as any)?.width || 1280
+        aspectRatio.width * sizeMultiplier
       }" />
       <meta property="witter:player:height" content="${
-        (post.value.embed?.aspectRatio as any)?.height || 720
+        aspectRatio.height * sizeMultiplier
       }" />
     </head>
     <body>hi</body>
