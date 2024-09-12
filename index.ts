@@ -43,15 +43,27 @@ function buildTags(
 
   return `
   <html>
-    <meta name="og:url" content="${videoURL}">
-    <meta property="og:type" content="video.other">
-    <meta name="og:site_name" content="Made with love by @sebola.chambando.xyz">
-    <meta name="theme-color" content="#0085ff">
-    <meta name="og:title" content="${post.value.text}">
-    <meta property="og:video" content="${videoURL}" />
-    <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
-    <meta property="og:video:secure_url" content="${videoURL}" />
-    <meta property="og:video:type" content="${video.mimeType}" />
+    <head>
+      <meta property="og:type" content="video.other" />
+      <meta property="og:title" content="ebsky.app | Video Playback" />
+      <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
+      
+      <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
+      
+      <meta property="og:url" content="${videoURL}" />
+      
+      <meta property="og:video:url" content="${videoURL}" />
+      <meta property="og:video:secure_url" content="${videoURL}" />
+      <meta property="og:video:type" content="${video.mimeType}" />
+      
+      <meta property="og:video:width" content="${
+        (post.value.embed?.aspectRatio as any)?.width || 1280
+      }" />
+      <meta property="og:video:height" content="${
+        (post.value.embed?.aspectRatio as any)?.height || 720
+      }" />
+      <meta name="theme-color" content="#0085ff">
+    </head>
     <body>hi</body>
   </html>
   `;
