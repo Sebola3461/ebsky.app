@@ -115,8 +115,6 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
 
       const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
-      console.log(req.headers);
-
       axios(videoURL, {
         httpsAgent: new Agent({
           rejectUnauthorized: false,
@@ -126,33 +124,11 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
           logger.printSuccess(`Handling a post video stream...`);
 
           const videoData: Buffer = result.data;
-          const range = req.headers.range;
 
-          if (range) {
-            // Handle partial requests for video (streaming)
-            const parts = range.replace(/bytes=/, "").split("-");
-            const start = parseInt(parts[0], 10);
-            const end = parts[1] ? parseInt(parts[1], 10) : video.size - 1;
-            const chunkSize = end - start + 1;
-
-            const videoBuffer = videoData.slice(start, end + 1);
-
-            const headers = {
-              "Content-Range": `bytes ${start}-${end}/${video.size}`,
-              "Accept-Ranges": "bytes",
-              "Content-Length": chunkSize,
-              "Content-Type": video.mimeType,
-            };
-
-            const videoStream = bufferToStream(videoBuffer);
-
-            res.writeHead(206, headers);
-            videoStream.pipe(res);
-          } else {
-            res.setHeader("Content-Length", video.size);
-            res.setHeader("Content-Type", video.mimeType);
-            res.status(200).send(videoData);
-          }
+          res.setHeader("Content-Type", video.mimeType);
+          res.setHeader("Content-Length", video.size);
+          res.writeHead(200);
+          res.end(videoData);
         })
         .catch((error) => {
           logger.printError(`Cannot handle stream for ${req.path}:`, error);
