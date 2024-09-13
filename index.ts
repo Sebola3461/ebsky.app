@@ -7,6 +7,7 @@ import axios from "axios";
 import { Agent } from "https";
 import { Readable } from "stream";
 import { readFileSync, writeFileSync } from "fs";
+import { createProxyMiddleware } from "http-proxy-middleware";
 denv.config();
 
 const app = express();
@@ -88,19 +89,32 @@ function buildTags(
   `;
 }
 
-function bufferToStream(buffer: Buffer) {
-  const readable = new Readable();
-  readable._read = () => {};
-  readable.push(buffer);
-  readable.push(null);
-  return readable;
+function rewriteParams(
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
+  const { cid, did } = req.params;
+  req.query.cid = cid;
+  req.query.did = did;
+  next();
 }
 
-app.get("/video/:repository/:profile", (req, res) => {
-  return res.redirect(
-    `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${req.params.repository}&did=${req.params.profile}`
-  );
-});
+app.get(
+  "/video/:cid/:did",
+  rewriteParams,
+  createProxyMiddleware({
+    target:
+      "https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob",
+    agent: new Agent({
+      rejectUnauthorized: false,
+    }),
+    pathRewrite: {
+      "^/video/:cid/:did": "/xrpc/com.atproto.sync.getBlob", // Rewrite the path
+    },
+    changeOrigin: true,
+  })
+);
 
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
