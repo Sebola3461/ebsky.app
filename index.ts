@@ -112,26 +112,33 @@ app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
     .then((post) => {
-      bsky.getProfile({ actor: req.params.repository }).then((profile) => {
-        if (!post.value.embed) return redirectToBsky(req, res);
+      bsky
+        .getProfile({ actor: req.params.repository })
+        .then((profile) => {
+          if (!post.value.embed) return redirectToBsky(req, res);
 
-        const userDID = post.uri.split("/")[2];
+          const userDID = post.uri.split("/")[2];
 
-        const media = post.value.embed;
+          const media = post.value.embed;
 
-        if (media.$type != "app.bsky.embed.video")
-          return redirectToBsky(req, res);
+          if (media.$type != "app.bsky.embed.video")
+            return redirectToBsky(req, res);
 
-        const video = media.video as any as BlobRef;
+          const video = media.video as any as BlobRef;
 
-        if (!video.ref) return redirectToBsky(req, res);
+          if (!video.ref) return redirectToBsky(req, res);
 
-        logger.printSuccess(`Handled a post!`);
+          logger.printSuccess(`Handled a post!`);
 
-        return res
-          .status(200)
-          .send(buildTags(req, post, profile, video, userDID));
-      });
+          return res
+            .status(200)
+            .send(buildTags(req, post, profile, video, userDID));
+        })
+        .catch((error) => {
+          logger.printError(`Cannot handle ${req.path}:`, error);
+
+          res.status(500).send(Buffer.from(""));
+        });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
