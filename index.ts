@@ -138,8 +138,6 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
           const end = Math.min(start + chunkSize - 1, fileSize - 1); // Streaming in 1MB chunks
           const contentLength = end - start + 1;
 
-          const fileStream = bufferToStream(fileBuffer);
-
           res.writeHead(206, {
             "Content-Range": `bytes ${start}-${end}/${fileSize}`,
             "Accept-Ranges": "bytes",
@@ -147,7 +145,7 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
             "Content-Type": "video/mp4",
           });
 
-          fileStream.pipe(res);
+          res.end(fileBuffer);
         })
         .catch((error) => {
           logger.printError(`Cannot handle stream for ${req.path}:`, error);
