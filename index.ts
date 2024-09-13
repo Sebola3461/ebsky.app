@@ -3,15 +3,13 @@ import AtpAgent, {
   AppBskyFeedPost,
   BlobRef,
 } from "@atproto/api";
-import express, { Request, response, Response } from "express";
+import express, { Request, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
 import path from "path";
 import axios from "axios";
 import { Agent } from "https";
-import { Readable } from "stream";
-import { readFileSync, writeFileSync } from "fs";
-import { createProxyMiddleware } from "http-proxy-middleware";
+
 denv.config();
 
 const app = express();
@@ -19,6 +17,8 @@ const app = express();
 const bsky = new AtpAgent({
   service: "https://bsky.social",
 });
+
+const urlHostnameCache = new Map<string, string>();
 
 const logger = new LoggerUtils("Server");
 
@@ -40,13 +40,24 @@ function truncateString(text: string, length: number) {
   return text.slice(0, length - 3).concat("...");
 }
 
+async function getFileURL(cid: string, did: string) {
+  return axios(
+    `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`,
+    {
+      httpsAgent: new Agent({
+        rejectUnauthorized: false,
+      }),
+    }
+  );
+}
+
 function buildTags(
-  req: Request,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
+  videoURL: string,
   userDID: string
 ) {
-  const videoURL = `https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
+  //const videoURL = `https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
 
   // const originalURL = new URL(path.join("https://bsky.app", url));
   // originalURL.host = "bsky.app";
@@ -124,9 +135,46 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       if (!video.ref) return redirectToBsky(req, res);
 
-      logger.printSuccess(`Handled a post!`);
+      const cacheKey = `${userDID}|${req.params.post}`;
 
-      return res.status(200).send(buildTags(req, post, video, userDID));
+      if (!urlHostnameCache.get(cacheKey)) {
+        getFileURL(video.ref.toString(), userDID)
+          .then((response) => {
+            if (response.request.res.responseUrl)
+              urlHostnameCache.set(cacheKey, response.request.res.responseUrl);
+
+            logger.printSuccess(`Handled a post!`);
+
+            res
+              .status(200)
+              .send(
+                buildTags(
+                  post,
+                  video,
+                  urlHostnameCache.get(cacheKey) || "",
+                  userDID
+                )
+              );
+          })
+          .catch((error) => {
+            logger.printError(`Cannot handle ${req.path}:`, error);
+
+            res.status(500).send("Bruh");
+          });
+      } else {
+        logger.printSuccess(`Handled a (cached) post!`);
+
+        res
+          .status(200)
+          .send(
+            buildTags(
+              post,
+              video,
+              urlHostnameCache.get(cacheKey) || "",
+              userDID
+            )
+          );
+      }
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
