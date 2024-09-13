@@ -81,7 +81,7 @@ function buildTags(
     <head>
       <meta property="og:type" content="video.other" />
       <meta property="og:title" content="ebsky.app | ${
-        post.value.text ? truncateString(post.value.text, 20) : "video playback"
+        post.value.text ? truncateString(post.value.text, 48) : "video playback"
       }" />
       <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
       <meta property="og:site_name" content="Made with love by @sebola.chambando.xyz" />
@@ -106,17 +106,6 @@ function buildTags(
   </html>
   `;
 }
-
-// function rewriteParams(
-//   req: express.Request,
-//   res: express.Response,
-//   next: express.NextFunction
-// ) {
-//   const { cid, did } = req.params;
-//   req.query.cid = cid;
-//   req.query.did = did;
-//   next();
-// }
 
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
