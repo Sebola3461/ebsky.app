@@ -130,33 +130,24 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
           const fileBuffer: Buffer = result.data; // Replace with your video buffer
 
           const fileSize = video.size;
-          const chunkSize = 8 * 1024 * 1024; // 8MB chunks
-          const range = req.headers.range;
+          const chunkSize = 2 * 1024 * 1024; // 8MB chunks
+          const range = req.headers.range || "bytes=0-";
 
-          if (range) {
-            const parts = range.replace(/bytes=/, "").split("-");
-            const start = parseInt(parts[0], 10);
-            const end = Math.min(start + chunkSize - 1, fileSize - 1); // Streaming in 1MB chunks
-            const contentLength = end - start + 1;
+          const parts = range.replace(/bytes=/, "").split("-");
+          const start = parseInt(parts[0], 10);
+          const end = Math.min(start + chunkSize - 1, fileSize - 1); // Streaming in 1MB chunks
+          const contentLength = end - start + 1;
 
-            const fileStream = bufferToStream(fileBuffer);
+          const fileStream = bufferToStream(fileBuffer);
 
-            res.writeHead(206, {
-              "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-              "Accept-Ranges": "bytes",
-              "Content-Length": contentLength,
-              "Content-Type": "video/mp4",
-            });
+          res.writeHead(206, {
+            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": contentLength,
+            "Content-Type": "video/mp4",
+          });
 
-            fileStream.pipe(res);
-          } else {
-            res.writeHead(200, {
-              "Content-Length": fileSize,
-              "Content-Type": "video/mp4",
-            });
-
-            bufferToStream(fileBuffer).pipe(res);
-          }
+          fileStream.pipe(res);
         })
         .catch((error) => {
           logger.printError(`Cannot handle stream for ${req.path}:`, error);
