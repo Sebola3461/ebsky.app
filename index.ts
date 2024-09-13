@@ -38,14 +38,14 @@ function buildTags(
   video: BlobRef,
   userDID: string
 ) {
-  const videoURL = `https://ebsky.app/video/${userDID}/${video.ref.toString()}`;
+  const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${userDID}&did${video.ref.toString()}`;
 
   // const originalURL = new URL(path.join("https://bsky.app", url));
   // originalURL.host = "bsky.app";
 
   if (!post.value.embed) return "";
 
-  const requestURL = `${req.protocol}://${req.hostname}${req.originalUrl}`;
+  const requestURL = ``;
 
   const aspectRatio: { width: number; height: number } = post.value.embed
     .aspectRatio as any;
@@ -89,32 +89,16 @@ function buildTags(
   `;
 }
 
-function rewriteParams(
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction
-) {
-  const { cid, did } = req.params;
-  req.query.cid = cid;
-  req.query.did = did;
-  next();
-}
-
-app.get(
-  "/video/:cid/:did",
-  rewriteParams,
-  createProxyMiddleware({
-    target:
-      "https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob",
-    agent: new Agent({
-      rejectUnauthorized: false,
-    }),
-    pathRewrite: {
-      "^/video/:cid/:did": "/xrpc/com.atproto.sync.getBlob", // Rewrite the path
-    },
-    changeOrigin: true,
-  })
-);
+// function rewriteParams(
+//   req: express.Request,
+//   res: express.Response,
+//   next: express.NextFunction
+// ) {
+//   const { cid, did } = req.params;
+//   req.query.cid = cid;
+//   req.query.did = did;
+//   next();
+// }
 
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
