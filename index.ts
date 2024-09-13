@@ -136,6 +136,12 @@ async function getFinalUrl(url: string): Promise<string> {
 }
 
 app.get("/profile/:repository/post/:post", (req, res) => {
+  if (
+    !req.headers["user-agent"] ||
+    !req.headers["user-agent"].includes("Discordbot/2.0")
+  )
+    return redirectToBsky(req, res);
+
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
     .then((post) => {
@@ -154,15 +160,11 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       const cacheKey = `${userDID}|${req.params.post}`;
 
-      console.log(req.headers["user-agent"]);
-
       if (!urlHostnameCache.get(cacheKey)) {
         const apiURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
 
         getFinalUrl(apiURL)
           .then((response) => {
-            console.log(response);
-
             if (response) urlHostnameCache.set(cacheKey, response);
 
             logger.printSuccess(`Handled a post!`);
