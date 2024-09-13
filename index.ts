@@ -1,4 +1,8 @@
-import AtpAgent, { AppBskyFeedPost, BlobRef } from "@atproto/api";
+import AtpAgent, {
+  AppBskyActorGetProfile,
+  AppBskyFeedPost,
+  BlobRef,
+} from "@atproto/api";
 import express, { Request, response, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
@@ -32,9 +36,14 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
   }
 }
 
+function truncateString(text: string, length: number) {
+  return text.slice(0, length - 3).concat("...");
+}
+
 function buildTags(
   req: Request,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
+  profile: AppBskyActorGetProfile.Response,
   video: BlobRef,
   userDID: string
 ) {
@@ -61,8 +70,11 @@ function buildTags(
   <html>
     <head>
       <meta property="og:type" content="video.other" />
-      <meta property="og:title" content="ebsky.app | Video Playback" />
+      <meta property="og:title" content="@${profile.data.handle} | ${
+    post.value.text ? truncateString(post.value.text, 20) : post.value.text
+  }" />
       <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
+      <meta property="og:site_name" content="ebsky | Made with love by @sebola.chambando.xyz" />
       
       <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       
@@ -100,36 +112,26 @@ app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
     .then((post) => {
-      if (!post.value.embed) return redirectToBsky(req, res);
+      bsky.getProfile({ actor: req.params.repository }).then((profile) => {
+        if (!post.value.embed) return redirectToBsky(req, res);
 
-      const userDID = post.uri.split("/")[2]; // No need to do another api call :fire:
+        const userDID = post.uri.split("/")[2];
 
-      const media = post.value.embed;
+        const media = post.value.embed;
 
-      if (media.$type != "app.bsky.embed.video")
-        return redirectToBsky(req, res);
+        if (media.$type != "app.bsky.embed.video")
+          return redirectToBsky(req, res);
 
-      const video = media.video as any as BlobRef;
+        const video = media.video as any as BlobRef;
 
-      if (!video.ref) return redirectToBsky(req, res);
+        if (!video.ref) return redirectToBsky(req, res);
 
-      // const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+        logger.printSuccess(`Handled a post!`);
 
-      // axios(videoURL, {
-      //   httpsAgent: new Agent({
-      //     rejectUnauthorized: false,
-      //   }),
-      // })
-      //   .then((result) => {
-      logger.printSuccess(`Handled a post!`);
-
-      return res.status(200).send(buildTags(req, post, video, userDID));
-      // })
-      // .catch((error) => {
-      //   logger.printError(`Cannot handle ${req.path}:`, error);
-
-      //   res.status(500).send(Buffer.from(""));
-      // });
+        return res
+          .status(200)
+          .send(buildTags(req, post, profile, video, userDID));
+      });
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
