@@ -45,8 +45,6 @@ function buildTags(
 
   if (!post.value.embed) return "";
 
-  const requestURL = ``;
-
   const aspectRatio: { width: number; height: number } = post.value.embed
     .aspectRatio as any;
 
@@ -71,8 +69,6 @@ function buildTags(
       <meta property="og:url" content="${videoURL}" />
       
       <meta property="og:video:url" content="${videoURL}" />
-      <meta property="og:video:stream" content="${videoURL}" />
-      <meta property="og:video:stream_secure" content="${videoURL}" />
       <meta property="og:video:secure_url" content="${videoURL}" />
       <meta property="og:video:type" content="${video.mimeType}" />
       
