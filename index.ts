@@ -43,7 +43,6 @@ function truncateString(text: string, length: number) {
 function buildTags(
   req: Request,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
-  profile: AppBskyActorGetProfile.Response,
   video: BlobRef,
   userDID: string
 ) {
@@ -70,9 +69,9 @@ function buildTags(
   <html>
     <head>
       <meta property="og:type" content="video.other" />
-      <meta property="og:title" content="@${profile.data.handle} | ${
-    post.value.text ? truncateString(post.value.text, 20) : post.value.text
-  }" />
+      <meta property="og:title" content="ebsky.app | ${
+        post.value.text ? truncateString(post.value.text, 20) : "video playback"
+      }" />
       <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
       <meta property="og:site_name" content="ebsky | Made with love by @sebola.chambando.xyz" />
       
@@ -112,33 +111,22 @@ app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
     .then((post) => {
-      bsky
-        .getProfile({ actor: req.params.repository })
-        .then((profile) => {
-          if (!post.value.embed) return redirectToBsky(req, res);
+      if (!post.value.embed) return redirectToBsky(req, res);
 
-          const userDID = post.uri.split("/")[2];
+      const userDID = post.uri.split("/")[2];
 
-          const media = post.value.embed;
+      const media = post.value.embed;
 
-          if (media.$type != "app.bsky.embed.video")
-            return redirectToBsky(req, res);
+      if (media.$type != "app.bsky.embed.video")
+        return redirectToBsky(req, res);
 
-          const video = media.video as any as BlobRef;
+      const video = media.video as any as BlobRef;
 
-          if (!video.ref) return redirectToBsky(req, res);
+      if (!video.ref) return redirectToBsky(req, res);
 
-          logger.printSuccess(`Handled a post!`);
+      logger.printSuccess(`Handled a post!`);
 
-          return res
-            .status(200)
-            .send(buildTags(req, post, profile, video, userDID));
-        })
-        .catch((error) => {
-          logger.printError(`Cannot handle ${req.path}:`, error);
-
-          res.status(500).send(Buffer.from(""));
-        });
+      return res.status(200).send(buildTags(req, post, video, userDID));
     })
     .catch((error) => {
       logger.printError(`Cannot handle ${req.path}:`, error);
