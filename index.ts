@@ -38,6 +38,7 @@ function truncateString(text: string, length: number) {
 
 function buildTags(
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
+  userHandle: string,
   video: BlobRef,
   videoURL: string,
   userDID: string
@@ -60,11 +61,11 @@ function buildTags(
   <html>
     <head>
       <meta property="og:type" content="video.other" />
-      <meta property="og:title" content="ebsky.app | ${
-        post.value.text ? truncateString(post.value.text, 48) : "video playback"
-      }" />
-      <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
-      <meta property="og:site_name" content="Made with love by @sebola.chambando.xyz" />
+      <meta property="og:title" content="@${userHandle} | ${
+    post.value.text ? truncateString(post.value.text, 48) : "video playback"
+  }" />
+      <meta property="og:description" content="ebsky.app | Made with ❤ by @sebola.chambando.xyz" />
+      <meta property="og:site_name" content="ebsky.app |ade with ❤ by @sebola.chambando.xyz" />
       
       <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       
@@ -155,6 +156,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
               .send(
                 buildTags(
                   post,
+                  req.params.repository.toLowerCase(),
                   video,
                   urlHostnameCache.get(cacheKey) || "",
                   userDID
@@ -174,6 +176,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
           .send(
             buildTags(
               post,
+              req.params.repository.toLowerCase(),
               video,
               urlHostnameCache.get(cacheKey) || "",
               userDID
