@@ -107,6 +107,34 @@ function buildTags(
   `;
 }
 
+async function getFinalUrl(url: string): Promise<string> {
+  try {
+    const response = await axios.head(url, {
+      maxRedirects: 0,
+      httpsAgent: new Agent({
+        rejectUnauthorized: false,
+      }),
+    });
+
+    return url;
+  } catch (error: any) {
+    if (
+      error.response &&
+      error.response.status >= 300 &&
+      error.response.status < 400
+    ) {
+      const redirectUrl = error.response.headers.location;
+      if (redirectUrl) {
+        return redirectUrl;
+      } else {
+        throw "";
+      }
+    } else {
+      throw "";
+    }
+  }
+}
+
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
@@ -126,11 +154,16 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       const cacheKey = `${userDID}|${req.params.post}`;
 
+      console.log(req.headers["user-agent"]);
+
       if (!urlHostnameCache.get(cacheKey)) {
-        getFileURL(video.ref.toString(), userDID)
+        const apiURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
+
+        getFinalUrl(apiURL)
           .then((response) => {
-            if (response.request.res.responseUrl)
-              urlHostnameCache.set(cacheKey, response.request.res.responseUrl);
+            console.log(response);
+
+            if (response) urlHostnameCache.set(cacheKey, response);
 
             logger.printSuccess(`Handled a post!`);
 
