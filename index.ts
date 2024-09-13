@@ -73,7 +73,7 @@ function buildTags(
         post.value.text ? truncateString(post.value.text, 20) : "video playback"
       }" />
       <meta property="og:description" content="Made with love by @sebola.chambando.xyz" />
-      <meta property="og:site_name" content="ebsky | Made with love by @sebola.chambando.xyz" />
+      <meta property="og:site_name" content="Made with love by @sebola.chambando.xyz" />
       
       <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       
