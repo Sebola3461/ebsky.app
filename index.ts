@@ -123,7 +123,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
       //   .then((result) => {
       logger.printSuccess(`Handled a post!`);
 
-      return res.end(buildTags(req, post, video, userDID));
+      return res.status(200).send(buildTags(req, post, video, userDID));
       // })
       // .catch((error) => {
       //   logger.printError(`Cannot handle ${req.path}:`, error);
