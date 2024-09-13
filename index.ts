@@ -35,10 +35,9 @@ function buildTags(
   req: Request,
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
-  videoURL: string,
   userDID: string
 ) {
-  // const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+  const videoURL = `https://ebsky.app/video/${userDID}/${video.ref.toString()}`;
 
   // const originalURL = new URL(path.join("https://bsky.app", url));
   // originalURL.host = "bsky.app";
@@ -97,6 +96,12 @@ function bufferToStream(buffer: Buffer) {
   return readable;
 }
 
+app.get("/video/:repository/:profile", (req, res) => {
+  return res.redirect(
+    `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${req.params.repository}&did=${req.params.profile}`
+  );
+});
+
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
@@ -114,7 +119,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       if (!video.ref) return redirectToBsky(req, res);
 
-      const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
+      // const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
 
       // axios(videoURL, {
       //   httpsAgent: new Agent({
@@ -124,7 +129,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
       //   .then((result) => {
       logger.printSuccess(`Handled a post!`);
 
-      return res.send(buildTags(req, post, video, videoURL, userDID));
+      return res.send(buildTags(req, post, video, userDID));
       // })
       // .catch((error) => {
       //   logger.printError(`Cannot handle ${req.path}:`, error);
