@@ -68,7 +68,7 @@ function buildTags(
       
       <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       
-      <meta property="og:url" content="${requestURL}/stream" />
+      <meta property="og:url" content="${videoURL}/stream" />
       
       <meta property="og:video:url" content="${videoURL}/stream" />
       <meta property="og:video:stream" content="${videoURL}/stream" />
