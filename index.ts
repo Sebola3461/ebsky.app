@@ -38,7 +38,7 @@ function buildTags(
   video: BlobRef,
   userDID: string
 ) {
-  const videoURL = `https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob?cid=${userDID}&did${video.ref.toString()}`;
+  const videoURL = `https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
 
   // const originalURL = new URL(path.join("https://bsky.app", url));
   // originalURL.host = "bsky.app";
