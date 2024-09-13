@@ -1,5 +1,5 @@
 import AtpAgent, { AppBskyFeedPost, BlobRef } from "@atproto/api";
-import express, { Request, Response } from "express";
+import express, { Request, response, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
 import path from "path";
@@ -129,35 +129,45 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
         .then((result) => {
           const fileBuffer: Buffer = result.data; // Replace with your video buffer
 
-          const fileSize = fileBuffer.length;
+          const fileSize = video.size;
+          const chunkSize = 8 * 1024 * 1024; // 8MB chunks
           const range = req.headers.range;
 
           if (range) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = Math.min(start + chunkSize - 1, fileSize - 1); // Streaming in 1MB chunks
+            const contentLength = end - start + 1;
+
+            const fileStream = bufferToStream(fileBuffer);
+
             res.writeHead(206, {
-              "Content-Length": String(result.headers["Content-Length"]),
-              "Content-Type": video.mimeType,
+              "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+              "Accept-Ranges": "bytes",
+              "Content-Length": contentLength,
+              "Content-Type": "video/mp4",
             });
 
-            res.end(fileBuffer);
+            fileStream.pipe(res);
           } else {
             res.writeHead(200, {
               "Content-Length": fileSize,
-              "Content-Type": video.mimeType,
+              "Content-Type": "video/mp4",
             });
 
-            res.end(fileBuffer);
+            bufferToStream(fileBuffer).pipe(res);
           }
         })
         .catch((error) => {
           logger.printError(`Cannot handle stream for ${req.path}:`, error);
 
-          res.status(500).send(Buffer.from(""));
+          res.status(500).end(Buffer.from(""));
         });
     })
     .catch((error) => {
       logger.printError(`Cannot handle stream for ${req.path}:`, error);
 
-      res.status(500).send(Buffer.from(""));
+      res.status(500).end(Buffer.from(""));
     });
 });
 
