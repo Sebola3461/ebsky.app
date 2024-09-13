@@ -64,7 +64,7 @@ function buildTags(
     <head>
       <meta property="og:type" content="video.other" />
       <meta property="og:title" content="@${userHandle}${
-    post.value.text ? " " + "|" + truncateString(post.value.text, 48) : ""
+    post.value.text ? " " + "|" + " " + truncateString(post.value.text, 48) : ""
   }" />
       <meta property="og:description" content="ebsky.app | Made with ❤ by @sebola.chambando.xyz" />
       <meta property="og:site_name" content="ebsky.app | Made with ❤ by @sebola.chambando.xyz" />
