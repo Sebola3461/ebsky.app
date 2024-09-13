@@ -136,10 +136,11 @@ async function getFinalUrl(url: string): Promise<string> {
 }
 
 app.get("/profile/:repository/post/:post", (req, res) => {
-  if (
-    !req.headers["user-agent"] ||
-    !req.headers["user-agent"].includes("Discordbot/2.0")
-  )
+  const userAgents = (req.headers["user-agent"] || "")
+    .split(";")
+    .map((u) => u.trim().toLowerCase());
+
+  if (!userAgents.find((u) => u == "discordbot/2.0"))
     return redirectToBsky(req, res);
 
   bsky
