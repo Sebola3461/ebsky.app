@@ -139,7 +139,7 @@ app.get("/profile/:repository/post/:post/stream", (req, res) => {
           const contentLength = end - start + 1;
 
           res.writeHead(206, {
-            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+            "Content-Range": `bytes=${start}-${end}/${fileSize}`,
             "Accept-Ranges": "bytes",
             "Content-Length": contentLength,
             "Content-Type": "video/mp4",
