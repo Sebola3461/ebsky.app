@@ -1,8 +1,4 @@
-import AtpAgent, {
-  AppBskyActorGetProfile,
-  AppBskyFeedPost,
-  BlobRef,
-} from "@atproto/api";
+import AtpAgent, { AppBskyFeedPost, BlobRef } from "@atproto/api";
 import express, { Request, Response } from "express";
 import { LoggerUtils } from "./utils/LoggerUtils";
 import denv from "dotenv";
@@ -40,28 +36,12 @@ function truncateString(text: string, length: number) {
   return text.slice(0, length - 3).concat("...");
 }
 
-async function getFileURL(cid: string, did: string) {
-  return axios(
-    `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`,
-    {
-      httpsAgent: new Agent({
-        rejectUnauthorized: false,
-      }),
-    }
-  );
-}
-
 function buildTags(
   post: { uri: string; cid: string; value: AppBskyFeedPost.Record },
   video: BlobRef,
   videoURL: string,
   userDID: string
 ) {
-  //const videoURL = `https://chaga.us-west.host.bsky.network/xrpc/com.atproto.sync.getBlob?did=${userDID}&cid=${video.ref.toString()}`;
-
-  // const originalURL = new URL(path.join("https://bsky.app", url));
-  // originalURL.host = "bsky.app";
-
   if (!post.value.embed) return "";
 
   const aspectRatio: { width: number; height: number } = post.value.embed
