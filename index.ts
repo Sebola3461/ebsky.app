@@ -116,6 +116,18 @@ async function getFinalUrl(url: string): Promise<string> {
   }
 }
 
+// too dumb, i can just do it with one regex lol (if you can write regex by hand you're pro)
+function sanitizePost(postURL: string) {
+  return postURL
+    .replace(/\|/g, "")
+    .replace(/\*/g, "")
+    .replace(/\_/g, "")
+    .replace(/\[/g, "")
+    .replace(/\]/g, "")
+    .replace(/\(/g, "")
+    .replace(/\)/g, "");
+}
+
 app.get("/profile/:repository/post/:post", (req, res) => {
   const userAgents = (req.headers["user-agent"] || "")
     .split(";")
@@ -123,6 +135,8 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
   if (!userAgents.find((u) => u == "discordbot/2.0"))
     return redirectToBsky(req, res);
+
+  req.params.post = sanitizePost(req.params.post);
 
   bsky
     .getPost({ repo: req.params.repository, rkey: req.params.post })
