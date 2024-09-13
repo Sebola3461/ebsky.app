@@ -70,10 +70,10 @@ function buildTags(
       
       <meta property="og:url" content="${requestURL}/stream" />
       
-      <meta property="og:video:url" content="${requestURL}/stream" />
-      <meta property="og:video:stream" content="${requestURL}/stream" />
-      <meta property="og:video:stream_secure" content="${requestURL}/stream" />
-      <meta property="og:video:secure_url" content="${requestURL}/stream" />
+      <meta property="og:video:url" content="${videoURL}/stream" />
+      <meta property="og:video:stream" content="${videoURL}/stream" />
+      <meta property="og:video:stream_secure" content="${videoURL}/stream" />
+      <meta property="og:video:secure_url" content="${videoURL}/stream" />
       <meta property="og:video:type" content="${video.mimeType}" />
       
       <meta property="og:video:width" content="${
@@ -96,69 +96,6 @@ function bufferToStream(buffer: Buffer) {
   readable.push(null);
   return readable;
 }
-
-app.get("/profile/:repository/post/:post/stream", (req, res) => {
-  bsky
-    .getPost({ repo: req.params.repository, rkey: req.params.post })
-    .then((post) => {
-      if (!post.value.embed) return redirectToBsky(req, res);
-
-      const userDID = post.uri.split("/")[2]; // No need to do another api call :fire:
-
-      const media = post.value.embed;
-
-      if (media.$type != "app.bsky.embed.video")
-        return redirectToBsky(req, res);
-
-      const video = media.video as any as BlobRef;
-
-      if (!video.ref) return redirectToBsky(req, res);
-
-      const videoURL = `https://public.api.bsky.social/xrpc/com.atproto.sync.getBlob?cid=${video.ref.toString()}&did=${userDID}`;
-
-      axios(videoURL, {
-        headers: req.headers.range
-          ? {
-              range: req.headers.range,
-            }
-          : undefined,
-        httpsAgent: new Agent({
-          rejectUnauthorized: false,
-        }),
-      })
-        .then((result) => {
-          const fileBuffer: Buffer = result.data; // Replace with your video buffer
-
-          const fileSize = video.size;
-          const chunkSize = 2 * 1024 * 1024; // 8MB chunks
-          const range = req.headers.range || "bytes=0-";
-
-          const parts = range.replace(/bytes=/, "").split("-");
-          const start = parseInt(parts[0], 10);
-          const end = Math.min(start + chunkSize - 1, fileSize - 1); // Streaming in 1MB chunks
-          const contentLength = end - start + 1;
-
-          res.writeHead(206, {
-            "Content-Range": `bytes=${start}-${end}/${fileSize}`,
-            "Accept-Ranges": "bytes",
-            "Content-Length": contentLength,
-            "Content-Type": "video/mp4",
-          });
-
-          res.end(fileBuffer);
-        })
-        .catch((error) => {
-          logger.printError(`Cannot handle stream for ${req.path}:`, error);
-
-          res.status(500).end(Buffer.from(""));
-        });
-    })
-    .catch((error) => {
-      logger.printError(`Cannot handle stream for ${req.path}:`, error);
-
-      res.status(500).end(Buffer.from(""));
-    });
-});
 
 app.get("/profile/:repository/post/:post", (req, res) => {
   bsky
