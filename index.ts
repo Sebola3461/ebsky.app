@@ -33,6 +33,8 @@ function redirectToBsky(req: Request, res: Response, force?: boolean) {
 }
 
 function truncateString(text: string, length: number) {
+  if (text.length <= length) return text;
+
   return text.slice(0, length - 3).concat("...");
 }
 
@@ -61,11 +63,11 @@ function buildTags(
   <html>
     <head>
       <meta property="og:type" content="video.other" />
-      <meta property="og:title" content="@${userHandle} | ${
-    post.value.text ? truncateString(post.value.text, 48) : "video playback"
+      <meta property="og:title" content="@${userHandle}${
+    post.value.text ? " " + "|" + truncateString(post.value.text, 48) : ""
   }" />
       <meta property="og:description" content="ebsky.app | Made with ❤ by @sebola.chambando.xyz" />
-      <meta property="og:site_name" content="ebsky.app |ade with ❤ by @sebola.chambando.xyz" />
+      <meta property="og:site_name" content="ebsky.app | Made with ❤ by @sebola.chambando.xyz" />
       
       <meta property="og:image" content="https://video.cdn.bsky.app/hls/${userDID}/${video.ref.toString()}/thumbnail.jpg" />
       
@@ -83,7 +85,7 @@ function buildTags(
       }" />
       <meta name="theme-color" content="#0085ff">
     </head>
-    <body>hi</body>
+    <body>You're so curious... There's nothing here</body>
   </html>
   `;
 }
