@@ -45,10 +45,13 @@ function buildTags(
   videoURL: string,
   userDID: string
 ) {
-  if (!post.value.embed) return "";
+  const postEmbededMedia = (post.value.embed?.video ||
+    (post?.value.embed?.media as any)?.video) as any as BlobRef;
 
-  const aspectRatio: { width: number; height: number } = post.value.embed
-    .aspectRatio as any;
+  if (!postEmbededMedia) return "";
+
+  const aspectRatio: { width: number; height: number } = (post.value.embed
+    ?.aspectRatio as any) || { width: 1280, height: 720 }; // always fallback to some value
 
   let sizeMultiplier = 1;
 
@@ -149,10 +152,18 @@ app.get("/profile/:repository/post/:post", (req, res) => {
 
       const media = post.value.embed;
 
-      if (media.$type != "app.bsky.embed.video")
+      // console.log(media);
+
+      if (
+        !["app.bsky.embed.recordWithMedia", "app.bsky.embed.video"].includes(
+          media.$type as string
+        )
+      )
         return redirectToBsky(req, res);
 
-      const video = media.video as any as BlobRef;
+      // this sucks
+      const video = (media.video ||
+        (media?.media as any)?.video) as any as BlobRef;
 
       if (!video.ref) return redirectToBsky(req, res);
 
