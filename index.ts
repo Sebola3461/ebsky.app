@@ -165,7 +165,7 @@ app.get("/profile/:repository/post/:post", (req, res) => {
       const video = (media.video ||
         (media?.media as any)?.video) as any as BlobRef;
 
-      if (!video.ref) return redirectToBsky(req, res);
+      if (!video || !video.ref) return redirectToBsky(req, res);
 
       const cacheKey = `${userDID}|${req.params.post}`;
 
